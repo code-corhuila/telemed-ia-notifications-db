@@ -1,0 +1,42 @@
+name: telemed-ia-notifications-db
+
+# =========================================================================
+# Migration executor for the notifications schema.
+#
+# Per Anexo J:
+#   - This repo does NOT define a Postgres container nor a volume.
+#   - The single instance lives in telemed-ia-infra-postgres.
+#   - This executor only applies the domain migrations to the shared
+#     instance, using its own Liquibase control tables (Anexo J.6).
+#
+# The postgres service is provided by the composition root of
+# telemed-ia-infra-postgres, which `include:`s this file.
+#
+# Run it from the infra repo:
+#   docker compose --env-file env/dev.env --profile tooling \
+#     run --rm notifications-db-migrate
+# =========================================================================
+
+services:
+  notifications-db-migrate:
+    image: liquibase/liquibase:4.31
+    container_name: notifications-db-migrate
+    profiles: [tooling]
+    volumes:
+      - ..:/workspace:ro
+    working_dir: /workspace
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:postgresql://postgres:5432/${PG_DATABASE:-telemed_ia}
+      LIQUIBASE_COMMAND_USERNAME: ${NOTIFICATIONS_APP_USER:-notifications_app}
+      LIQUIBASE_COMMAND_PASSWORD: ${NOTIFICATIONS_APP_PASSWORD:?required}
+      LIQUIBASE_COMMAND_CHANGELOG_FILE: changelog/changelog-master.yaml
+      LIQUIBASE_DATABASE_CHANGELOG_TABLE_NAME: databasechangelog_notifications
+      LIQUIBASE_DATABASE_CHANGELOG_LOCK_TABLE_NAME: databasechangeloglock_notifications
+    command: ["update", "--search-path=/workspace"]
+    networks:
+      - platform
+
+networks:
+  platform:
+    external: true
+    name: platform

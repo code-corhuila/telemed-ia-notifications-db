@@ -1,1 +1,16 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: ddl-schemas-001
+      author: telemed
+      labels: "HU-03,ddl,schemas"
+      comment: "notifications schema reserved for the notifications bounded context."
+      changes:
+        - sqlFile:
+            path: 001_create_schema_notifications.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: ../../05_rollbacks/01_ddl/01_schemas/001_create_schema_notifications.rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

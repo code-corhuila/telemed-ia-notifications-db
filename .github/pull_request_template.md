@@ -1,27 +1,22 @@
-User story
-code-corhuila/telemed-ia-docs#<!-- issue number --> (HU-<!-- two digits --> — <!-- title -->)
+## What changes and why
+<!-- One paragraph. The reviewer reads this before the diff. -->
 
-What changes and why
-<!-- A few lines. -->
 
-How it was tested
+## User story (required)
+<!-- Replace NN. Without this line env-tracking cannot move the story on the board. -->
+Refs: code-corhuila/telemed-ia-docs#NN
 
-- [ ] db-ci.yml green
-- [ ] `bash tests/run-db-tests.sh` ends with `ALL NOTIFICATIONS DB TESTS PASSED`
-- [ ] Update on an empty database applies every changeset
-- [ ] Second update applies 0 changesets
-- [ ] Rollback of every changeset leaves the schema empty
-- [ ] Update rebuilds after the rollback
 
-Promotion trail
+## Promotion trail (only for pull requests into `qa` or `main`)
+<!-- List the original commits this pull request re-applies.
+     Every commit must carry the line "(cherry picked from commit <sha>)". -->
+-
 
-<!-- Only for PRs targeting qa or main. -->
-<!-- List of cherry-picked commits, each with its (cherry picked from commit <sha>) line. -->
 
-Checklist
-
-- [ ] No secrets versioned
-- [ ] No schema changes outside this -db repository
-- [ ] New changesets only; no applied changeset was edited
-- [ ] PR <= 400 lines (tests and generated files excluded)
-- [ ] Conventional Commit in the title
+## Checklist
+- [ ] Meets the acceptance criteria of the user story
+- [ ] Local validation passes (build + tests)
+- [ ] Under 400 changed lines, excluding tests and generated files
+- [ ] Title follows Conventional Commits
+- [ ] Database repositories: only NEW changesets — no applied changeset was edited
+- [ ] Into `qa` or `main`: every commit was re-applied with `git cherry-pick -x`

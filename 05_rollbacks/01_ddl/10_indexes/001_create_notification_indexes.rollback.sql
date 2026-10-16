@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS notifications.idx_notification_pending_failed;
+DROP INDEX IF EXISTS notifications.idx_notification_recipient_created;

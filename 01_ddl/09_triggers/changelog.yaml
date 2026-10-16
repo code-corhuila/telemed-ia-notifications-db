@@ -1,1 +1,16 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: ddl-triggers-001
+      author: telemed
+      labels: "HU-03,ddl,triggers"
+      comment: "Refresh notification.updated_at on every update."
+      changes:
+        - sqlFile:
+            path: 001_notification_updated_at.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: ../../05_rollbacks/01_ddl/09_triggers/001_notification_updated_at.rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

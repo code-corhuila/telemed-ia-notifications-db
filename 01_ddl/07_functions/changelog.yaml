@@ -1,1 +1,16 @@
-databaseChangeLog: []
+databaseChangeLog:
+  - changeSet:
+      id: ddl-functions-001
+      author: telemed
+      labels: "HU-03,ddl,functions"
+      comment: "set_updated_at trigger function for the notifications schema."
+      changes:
+        - sqlFile:
+            path: 001_set_updated_at.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: ../../05_rollbacks/01_ddl/07_functions/001_set_updated_at.rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

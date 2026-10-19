@@ -32,7 +32,7 @@ services:
       LIQUIBASE_COMMAND_CHANGELOG_FILE: changelog/changelog-master.yaml
       LIQUIBASE_DATABASE_CHANGELOG_TABLE_NAME: databasechangelog_notifications
       LIQUIBASE_DATABASE_CHANGELOG_LOCK_TABLE_NAME: databasechangeloglock_notifications
-    command: ["update", "--search-path=/workspace"]
+    command: ["--search-path=/workspace", "update"]
     networks:
       - platform
 

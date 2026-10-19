@@ -11,7 +11,8 @@
 #   2. Bootstrap roles (mimics telemed-ia-infra-postgres 01-instance.sh).
 #   3. liquibase update on an empty database.
 #   4. Second update applies zero changesets.
-#   5. Rollback of every changeset leaves no domain objects.
+#   5. Rollback of every changeset leaves no domain objects (the schema
+#      itself belongs to the infrastructure and is kept).
 #   6. Rebuild from scratch.
 #   7. SQL tests in tests/sql/*.sql, run as notifications_app.
 # =========================================================================
@@ -83,7 +84,7 @@ liquibase() {
 }
 
 applied_count() {
-  app_psql -tA -c "SELECT COUNT(*) FROM public.${CHANGELOG_TABLE};"
+  app_psql -tA -c "SELECT COUNT(*) FROM ${SCHEMA}.${CHANGELOG_TABLE};"
 }
 
 step "1. Declared changesets match changelog/expected-count.txt"
@@ -116,9 +117,10 @@ admin_psql -v app_password="$APP_PASSWORD" <<'SQL'
 CREATE ROLE notifications_app LOGIN PASSWORD :'app_password';
 CREATE ROLE notifications_reader NOLOGIN;
 CREATE ROLE notifications_writer NOLOGIN;
-GRANT notifications_reader, notifications_writer TO notifications_app;
+GRANT notifications_reader, notifications_writer TO notifications_app WITH ADMIN OPTION;
 GRANT CREATE ON DATABASE telemed_ia TO notifications_app;
-GRANT CREATE ON SCHEMA public TO notifications_app;
+CREATE SCHEMA notifications AUTHORIZATION notifications_app;
+ALTER ROLE notifications_app SET search_path = notifications;
 SQL
 
 step "3. Apply all migrations"
@@ -138,8 +140,16 @@ if [ "$first" -gt 0 ]; then
 fi
 remaining="$(applied_count)"
 [ "$remaining" = "0" ] || fail "${remaining} changesets remain after rollback"
-leftover="$(app_psql -tA -c "SELECT COUNT(*) FROM pg_namespace WHERE nspname = '${SCHEMA}';")"
-[ "$leftover" = "0" ] || fail "schema ${SCHEMA} still exists after rollback"
+# The schema belongs to the infrastructure and survives the rollback; only
+# the Liquibase control tables may remain inside it.
+leftover="$(app_psql -tA <<SQL
+SELECT (SELECT COUNT(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+         WHERE n.nspname = '${SCHEMA}' AND c.relname NOT LIKE 'databasechangelog%')
+     + (SELECT COUNT(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+         WHERE n.nspname = '${SCHEMA}');
+SQL
+)"
+[ "$leftover" = "0" ] || fail "${leftover} domain objects remain in schema ${SCHEMA} after rollback"
 
 step "6. Rebuild from scratch"
 liquibase update

@@ -52,6 +52,24 @@ BEGIN
     END IF;
 END $$;
 
+-- X-Correlation-Id values of up to 128 characters are accepted by the
+-- notifications-api filter and by the identity outbox that emits the events.
+DO $$
+DECLARE
+    max_length integer;
+BEGIN
+    SELECT character_maximum_length
+      INTO max_length
+      FROM information_schema.columns
+     WHERE table_schema = 'notifications'
+       AND table_name = 'notification'
+       AND column_name = 'correlation_id';
+
+    IF max_length IS DISTINCT FROM 128 THEN
+        RAISE EXCEPTION 'correlation_id must hold 128 characters, got %', max_length;
+    END IF;
+END $$;
+
 -- 2. Defaults -------------------------------------------------------------
 
 DO $$

@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: ddl-tables-001
+      author: telemed
+      labels: "HU-03,ddl,tables"
+      comment: "notification: delivery record per consumed event. No FKs to other domains, no message body, address or link."
+      changes:
+        - sqlFile:
+            path: 001_create_notification.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: ../../05_rollbacks/01_ddl/03_tables/001_create_notification.rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - changeSet:
+      id: ddl-alter-001
+      author: telemed
+      labels: "HU-03,ddl,alter"
+      comment: "Store X-Correlation-Id values of up to 128 characters, aligned with notifications-api and the identity outbox."
+      changes:
+        - sqlFile:
+            path: 001_widen_notification_correlation_id.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: ../../05_rollbacks/01_ddl/04_alter/001_widen_notification_correlation_id.rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

@@ -29,3 +29,18 @@ databaseChangeLog:
             path: ../../05_rollbacks/01_ddl/04_alter/002_add_notification_inbox_fields.rollback.sql
             relativeToChangelogFile: true
             splitStatements: false
+  - changeSet:
+      id: ddl-alter-003
+      author: telemed
+      labels: "HU-17,HU-18,ddl,alter"
+      comment: "IN_APP channel for notifications shown only in the inbox (professionals, consultation PDF ready)."
+      changes:
+        - sqlFile:
+            path: 003_add_notification_in_app_channel.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: ../../05_rollbacks/01_ddl/04_alter/003_add_notification_in_app_channel.rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

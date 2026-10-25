@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS notifications.idx_notification_recipient_unread;

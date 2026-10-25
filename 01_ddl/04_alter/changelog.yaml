@@ -14,3 +14,18 @@ databaseChangeLog:
             path: ../../05_rollbacks/01_ddl/04_alter/001_widen_notification_correlation_id.rollback.sql
             relativeToChangelogFile: true
             splitStatements: false
+  - changeSet:
+      id: ddl-alter-002
+      author: telemed
+      labels: "HU-17,HU-18,ddl,alter"
+      comment: "Inbox fields: idempotency per event and recipient, DOCUMENT_READY type and the subject of each notification."
+      changes:
+        - sqlFile:
+            path: 002_add_notification_inbox_fields.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: ../../05_rollbacks/01_ddl/04_alter/002_add_notification_inbox_fields.rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

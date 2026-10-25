@@ -119,6 +119,20 @@ BEGIN
     END LOOP;
 END $$;
 
+-- 3b. Accepted channels: EMAIL, and IN_APP for notifications shown only in
+-- the inbox (professionals, consultation PDF ready), delivered on creation.
+
+DO $$
+DECLARE
+    accepted text;
+BEGIN
+    FOREACH accepted IN ARRAY ARRAY['EMAIL', 'IN_APP'] LOOP
+        INSERT INTO notifications.notification
+            (recipient_user_id, type, source_event_id, channel, status, sent_at)
+        VALUES (gen_random_uuid(), 'DOCUMENT_READY', gen_random_uuid(), accepted, 'SENT', now());
+    END LOOP;
+END $$;
+
 -- 4. Check constraints reject invalid values ------------------------------
 
 DO $$

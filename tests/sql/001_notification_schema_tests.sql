@@ -1,5 +1,5 @@
 -- =========================================================================
--- Schema tests for notifications.notification (HU-03).
+-- Schema tests for notifications.notification (HU-03, HU-17, HU-18).
 --
 -- Run by tests/run-db-tests.sh as notifications_app after the migrations.
 -- Everything runs inside one transaction that is rolled back at the end,
@@ -37,6 +37,9 @@ DECLARE
                   || 'sent_at:timestamp with time zone:YES,'
                   || 'source_event_id:uuid:NO,'
                   || 'status:character varying:NO,'
+                  || 'subject_at:timestamp with time zone:YES,'
+                  || 'subject_id:uuid:YES,'
+                  || 'subject_type:character varying:YES,'
                   || 'type:character varying:NO,'
                   || 'updated_at:timestamp with time zone:NO';
     actual text;
@@ -108,7 +111,8 @@ BEGIN
         'APPOINTMENT_CONFIRMED',
         'APPOINTMENT_CANCELLED',
         'APPOINTMENT_RESCHEDULED',
-        'APPOINTMENT_REMINDER'
+        'APPOINTMENT_REMINDER',
+        'DOCUMENT_READY'
     ] LOOP
         INSERT INTO notifications.notification (recipient_user_id, type, source_event_id)
         VALUES (gen_random_uuid(), accepted, gen_random_uuid());
@@ -157,21 +161,55 @@ BEGIN
 
     INSERT INTO notifications.notification (recipient_user_id, type, source_event_id, status, sent_at)
     VALUES (gen_random_uuid(), 'PASSWORD_RECOVERY', gen_random_uuid(), 'SENT', now());
+
+    -- The inbox links a notification to what it is about: both or neither.
+    BEGIN
+        INSERT INTO notifications.notification (recipient_user_id, type, source_event_id, subject_type, subject_id)
+        VALUES (gen_random_uuid(), 'APPOINTMENT_CONFIRMED', gen_random_uuid(), 'PRESCRIPTION', gen_random_uuid());
+        RAISE EXCEPTION 'unknown subject_type was accepted';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+
+    BEGIN
+        INSERT INTO notifications.notification (recipient_user_id, type, source_event_id, subject_type)
+        VALUES (gen_random_uuid(), 'APPOINTMENT_CONFIRMED', gen_random_uuid(), 'APPOINTMENT');
+        RAISE EXCEPTION 'subject_type without subject_id was accepted';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+
+    BEGIN
+        INSERT INTO notifications.notification (recipient_user_id, type, source_event_id, subject_id)
+        VALUES (gen_random_uuid(), 'APPOINTMENT_CONFIRMED', gen_random_uuid(), gen_random_uuid());
+        RAISE EXCEPTION 'subject_id without subject_type was accepted';
+    EXCEPTION WHEN check_violation THEN NULL;
+    END;
+
+    INSERT INTO notifications.notification
+        (recipient_user_id, type, source_event_id, subject_type, subject_id, subject_at)
+    VALUES (gen_random_uuid(), 'APPOINTMENT_REMINDER', gen_random_uuid(), 'APPOINTMENT', gen_random_uuid(), now());
+
+    INSERT INTO notifications.notification (recipient_user_id, type, source_event_id, subject_type, subject_id)
+    VALUES (gen_random_uuid(), 'DOCUMENT_READY', gen_random_uuid(), 'DOCUMENT', gen_random_uuid());
 END $$;
 
--- 5. Idempotency: one notification per source event -----------------------
+-- 5. Idempotency: one notification per source event and recipient --------
 
 DO $$
 DECLARE
     event_id uuid := gen_random_uuid();
+    patient_id uuid := gen_random_uuid();
 BEGIN
     INSERT INTO notifications.notification (recipient_user_id, type, source_event_id)
-    VALUES (gen_random_uuid(), 'PASSWORD_RECOVERY', event_id);
+    VALUES (patient_id, 'APPOINTMENT_CONFIRMED', event_id);
+
+    -- The same event also notifies the professional of the appointment.
+    INSERT INTO notifications.notification (recipient_user_id, type, source_event_id)
+    VALUES (gen_random_uuid(), 'APPOINTMENT_CONFIRMED', event_id);
 
     BEGIN
         INSERT INTO notifications.notification (recipient_user_id, type, source_event_id)
-        VALUES (gen_random_uuid(), 'PASSWORD_RECOVERY', event_id);
-        RAISE EXCEPTION 'duplicate source_event_id was accepted';
+        VALUES (patient_id, 'APPOINTMENT_CONFIRMED', event_id);
+        RAISE EXCEPTION 'duplicate source_event_id for the same recipient was accepted';
     EXCEPTION WHEN unique_violation THEN NULL;
     END;
 END $$;
@@ -213,6 +251,17 @@ BEGIN
            AND indexdef LIKE '%WHERE%'
     ) THEN
         RAISE EXCEPTION 'partial index idx_notification_pending_failed is missing';
+    END IF;
+
+    -- Unread badge and "unread" filter of the inbox.
+    IF NOT EXISTS (
+        SELECT 1
+          FROM pg_indexes
+         WHERE schemaname = 'notifications'
+           AND indexname = 'idx_notification_recipient_unread'
+           AND indexdef LIKE '%WHERE (read_at IS NULL)%'
+    ) THEN
+        RAISE EXCEPTION 'partial index idx_notification_recipient_unread is missing';
     END IF;
 END $$;
 

@@ -1,0 +1,26 @@
+name: DB CI
+
+on:
+  push:
+    branches: [develop, qa, main]
+  pull_request:
+    branches: [develop, qa, main]
+
+permissions:
+  contents: read
+
+jobs:
+  reconstruction:
+    name: Reconstruction and schema tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runner starts a disposable PostgreSQL 16 and Liquibase 4.31 in
+      # Docker, bootstraps the roles that telemed-ia-infra-postgres creates,
+      # and checks: expected changeset count, update, idempotent re-update,
+      # full rollback, rebuild and the SQL tests in tests/sql.
+      - name: Run database tests
+        run: bash tests/run-db-tests.sh

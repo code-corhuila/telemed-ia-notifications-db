@@ -1,0 +1,24 @@
+# Secrets and environment variables
+.env
+.env.*
+!.env.example
+
+# Certificates and keys
+*.pem
+*.key
+keys/
+
+# Editors
+.idea/
+.vscode/
+*.iml
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local Liquibase
+liquibase.properties
